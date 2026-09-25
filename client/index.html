@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="BloodConnect — smart emergency blood request, donor and geospatial matching dashboard.">
+  <title>BloodConnect | Smart Blood Dispatch</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://unpkg.com">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand-wrap">
+        <div class="brand-mark"><i class="bi bi-droplet-fill"></i></div>
+        <div><div class="brand-name">BloodConnect</div><div class="brand-sub">Smart Blood Dispatch</div></div>
+      </div>
+      <div class="sidebar-label">Workspace</div>
+      <nav class="side-nav">
+        <a href="#dashboard" data-section="dashboard" class="side-link active"><i class="bi bi-grid-1x2-fill"></i><span>Overview</span></a>
+        <a href="#requests" data-section="requests" class="side-link"><i class="bi bi-heart-pulse-fill"></i><span>Blood Requests</span><span class="nav-count" id="navOpenCount">0</span></a>
+        <a href="#donors" data-section="donors" class="side-link"><i class="bi bi-people-fill"></i><span>Donor Registry</span></a>
+        <a href="#matches" data-section="matches" class="side-link"><i class="bi bi-bullseye"></i><span>Matching Engine</span></a>
+        <a href="#analytics" data-section="analytics" class="side-link"><i class="bi bi-bar-chart-fill"></i><span>Analytics</span></a>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="system-card"><div class="system-dot"></div><div><strong>System online</strong><small>MongoDB API connected</small></div></div>
+        <a href="/api-docs" target="_blank" class="side-link"><i class="bi bi-braces"></i><span>API Documentation</span></a>
+      </div>
+    </aside>
+
+    <div class="main-area">
+      <header class="topbar">
+        <button class="icon-btn d-lg-none" id="mobileMenu"><i class="bi bi-list"></i></button>
+        <div class="page-heading"><span id="pageKicker">Operations</span><h1 id="pageTitle">Emergency overview</h1></div>
+        <div class="top-actions">
+          <div class="live-status"><span></span> Live</div>
+          <button class="icon-btn" id="themeToggle" title="Toggle dark mode"><i class="bi bi-moon-stars-fill"></i></button>
+          <button class="icon-btn" id="healthBtn" title="Check API health"><i class="bi bi-activity"></i></button>
+          <button class="profile-chip" id="profileBtn"><span class="avatar">BC</span><span class="d-none d-md-inline">Dispatch Admin</span><i class="bi bi-chevron-down"></i></button>
+        </div>
+      </header>
+
+      <main class="content-wrap">
+        <section id="dashboard" class="app-section">
+          <div class="hero-panel">
+            <div class="hero-copy"><span class="eyebrow"><i class="bi bi-shield-check"></i> Emergency coordination platform</span><h2>Move the right blood to the right patient, faster.</h2><p>BloodConnect combines blood-group compatibility, donor cooldown rules and geospatial distance to surface eligible donors in seconds.</p><div class="hero-actions"><button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#requestModal"><i class="bi bi-plus-lg"></i> Create emergency request</button><button class="btn btn-soft" data-bs-toggle="modal" data-bs-target="#donorModal"><i class="bi bi-person-plus"></i> Register donor</button></div></div>
+            <div class="hero-visual"><div class="pulse-ring"><div class="pulse-core"><i class="bi bi-droplet-fill"></i></div></div><div class="hero-mini"><strong>Smart matching</strong><span>ABO/Rh + 90-day cooldown + distance</span></div></div>
+          </div>
+
+          <div class="stat-grid">
+            <div class="metric-card"><div class="metric-icon blue"><i class="bi bi-people-fill"></i></div><div><span>Total donors</span><strong id="statDonors">—</strong><small>registered profiles</small></div></div>
+            <div class="metric-card"><div class="metric-icon green"><i class="bi bi-person-check-fill"></i></div><div><span>Available now</span><strong id="statAvailable">—</strong><small>ready for matching</small></div></div>
+            <div class="metric-card"><div class="metric-icon amber"><i class="bi bi-hourglass-split"></i></div><div><span>Open requests</span><strong id="statOpen">—</strong><small>awaiting dispatch</small></div></div>
+            <div class="metric-card danger"><div class="metric-icon red"><i class="bi bi-exclamation-triangle-fill"></i></div><div><span>Critical</span><strong id="statCritical">—</strong><small>priority requests</small></div></div>
+          </div>
+
+          <div class="row g-4 mt-1">
+            <div class="col-xl-5"><div class="panel h-100"><div class="panel-head"><div><h3>Priority queue</h3><p>Open requests requiring attention.</p></div><a href="#requests" data-section="requests" class="text-link">View all <i class="bi bi-arrow-right"></i></a></div><div id="requestList" class="stack"></div></div></div>
+            <div class="col-xl-7"><div class="panel h-100"><div class="panel-head"><div><h3>Live donor map</h3><p>Emergency location and eligible donor proximity.</p></div><button class="btn btn-light btn-sm" id="fitMapBtn"><i class="bi bi-arrows-fullscreen"></i> Fit map</button></div><div id="map"></div></div></div>
+          </div>
+        </section>
+
+        <section id="requests" class="app-section d-none"><div class="section-intro"><div><span class="eyebrow">Operations</span><h2>Blood requests</h2><p>Track emergency cases from creation through fulfillment.</p></div><button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#requestModal"><i class="bi bi-plus-lg"></i> New request</button></div><div class="toolbar panel"><div class="search-box"><i class="bi bi-search"></i><input id="requestSearch" placeholder="Search patient, hospital or blood group..."></div><select id="requestStatusFilter" class="form-select compact-select"><option value="">All statuses</option><option value="OPEN">Open</option><option value="FULFILLED">Fulfilled</option><option value="CANCELLED">Cancelled</option></select><select id="requestUrgencyFilter" class="form-select compact-select"><option value="">All urgency</option><option value="CRITICAL">Critical</option><option value="HIGH">High</option><option value="MEDIUM">Medium</option><option value="LOW">Low</option></select><button class="btn btn-soft" id="exportRequests"><i class="bi bi-download"></i> Export</button></div><div class="panel table-panel"><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Patient</th><th>Hospital</th><th>Blood</th><th>Units</th><th>Urgency</th><th>Status</th><th>Created</th><th class="text-end">Actions</th></tr></thead><tbody id="requestsTable"></tbody></table></div></div></section>
+
+        <section id="donors" class="app-section d-none"><div class="section-intro"><div><span class="eyebrow">People</span><h2>Donor registry</h2><p>Manage donor availability, contact details and eligibility.</p></div><button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#donorModal"><i class="bi bi-person-plus"></i> Register donor</button></div><div class="toolbar panel"><div class="search-box"><i class="bi bi-search"></i><input id="donorSearch" placeholder="Search donor name, email or phone..."></div><select id="donorBloodFilter" class="form-select compact-select"><option value="">All blood groups</option></select><select id="donorAvailabilityFilter" class="form-select compact-select"><option value="">All availability</option><option value="true">Available</option><option value="false">Unavailable</option></select><button class="btn btn-soft" id="exportDonors"><i class="bi bi-download"></i> Export</button></div><div class="panel table-panel"><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Donor</th><th>Blood</th><th>Contact</th><th>Location</th><th>Last donation</th><th>Eligibility</th><th>Status</th><th class="text-end">Actions</th></tr></thead><tbody id="donorsTable"></tbody></table></div></div></section>
+
+        <section id="matches" class="app-section d-none"><div class="section-intro"><div><span class="eyebrow">Decision support</span><h2>Matching engine</h2><p>Find compatible donors using blood compatibility, cooldown and distance.</p></div></div><div class="row g-4"><div class="col-xl-4"><div class="panel sticky-panel"><div class="panel-head"><div><h3>Match criteria</h3><p>Configure the search.</p></div></div><label class="form-label">Emergency request</label><select class="form-select" id="matchRequest"></select><label class="form-label mt-3">Maximum distance</label><div class="input-group"><input id="matchDistance" type="number" class="form-control" value="50" min="1" max="500"><span class="input-group-text">km</span></div><div class="criteria-list"><div><i class="bi bi-check-circle-fill"></i> ABO/Rh compatibility</div><div><i class="bi bi-check-circle-fill"></i> 90-day donation cooldown</div><div><i class="bi bi-check-circle-fill"></i> Geographic distance</div><div><i class="bi bi-check-circle-fill"></i> Availability status</div></div><button class="btn btn-primary w-100 mt-3" id="runMatchBtn"><i class="bi bi-bullseye"></i> Find compatible donors</button></div></div><div class="col-xl-8"><div class="panel"><div class="panel-head"><div><h3>Ranked donor results</h3><p>Direct matches are prioritized, followed by compatible donors.</p></div><span class="result-count" id="matchCount">0 results</span></div><div id="matchResults" class="stack"><div class="empty-state"><i class="bi bi-bullseye"></i><h4>Ready to match</h4><p>Select an open request and run the engine.</p></div></div></div></div></div></section>
+
+        <section id="analytics" class="app-section d-none"><div class="section-intro"><div><span class="eyebrow">Insights</span><h2>Operations analytics</h2><p>A quick view of request pressure, donor availability and outcomes.</p></div><button class="btn btn-soft" id="refreshAnalytics"><i class="bi bi-arrow-clockwise"></i> Refresh</button></div><div class="row g-4"><div class="col-xl-7"><div class="panel chart-panel"><div class="panel-head"><div><h3>Request urgency</h3><p>Current distribution of emergency cases.</p></div></div><canvas id="urgencyChart"></canvas></div></div><div class="col-xl-5"><div class="panel chart-panel"><div class="panel-head"><div><h3>Request outcomes</h3><p>Fulfilled vs open vs cancelled.</p></div></div><canvas id="statusChart"></canvas></div></div></div><div class="row g-4 mt-1"><div class="col-lg-4"><div class="insight-card"><i class="bi bi-shield-check"></i><div><strong>Cooldown protected</strong><p>Donors within the 90-day cooldown are automatically excluded from matching.</p></div></div></div><div class="col-lg-4"><div class="insight-card"><i class="bi bi-geo-alt-fill"></i><div><strong>Location-aware</strong><p>Haversine distance ranks eligible donors around the requesting hospital.</p></div></div></div><div class="col-lg-4"><div class="insight-card"><i class="bi bi-lightning-charge-fill"></i><div><strong>Dispatch focused</strong><p>Critical cases remain visible in the priority queue for rapid action.</p></div></div></div></div></section>
+      </main>
+    </div>
+  </div>
+
+  <div class="modal fade" id="requestModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content"><form id="requestForm"><div class="modal-header"><div><span class="eyebrow">Emergency dispatch</span><h4 class="modal-title">Create blood request</h4></div><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="form-section"><h6>Patient & requirement</h6><div class="row g-3"><div class="col-md-6"><label class="form-label">Patient name</label><input name="patientName" class="form-control" required></div><div class="col-md-6"><label class="form-label">Hospital name</label><input name="hospitalName" class="form-control" required></div><div class="col-md-4"><label class="form-label">Blood group</label><select name="requiredBloodGroup" class="form-select" required></select></div><div class="col-md-4"><label class="form-label">Units required</label><input name="unitsRequired" type="number" min="1" max="20" class="form-control" value="1" required></div><div class="col-md-4"><label class="form-label">Urgency</label><select name="urgencyLevel" class="form-select" required><option>CRITICAL</option><option>HIGH</option><option selected>MEDIUM</option><option>LOW</option></select></div></div></div><div class="form-section"><h6>Hospital location</h6><div class="row g-3"><div class="col-md-6"><label class="form-label">Latitude</label><input name="hospitalLatitude" type="number" step="any" class="form-control" value="23.2599" required></div><div class="col-md-6"><label class="form-label">Longitude</label><input name="hospitalLongitude" type="number" step="any" class="form-control" value="77.4126" required></div></div></div></div><div class="modal-footer"><button type="button" class="btn btn-soft" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary"><i class="bi bi-send-fill"></i> Create request</button></div></form></div></div></div>
+  <div class="modal fade" id="donorModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content"><form id="donorForm"><div class="modal-header"><div><span class="eyebrow">Donor registry</span><h4 class="modal-title">Register blood donor</h4></div><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="form-section"><h6>Personal details</h6><div class="row g-3"><div class="col-md-6"><label class="form-label">Full name</label><input name="name" class="form-control" required></div><div class="col-md-6"><label class="form-label">Email</label><input name="email" type="email" class="form-control" required></div><div class="col-md-6"><label class="form-label">Phone number</label><input name="phoneNumber" class="form-control" required></div><div class="col-md-6"><label class="form-label">Blood group</label><select name="bloodGroup" class="form-select" required></select></div></div></div><div class="form-section"><h6>Eligibility & location</h6><div class="row g-3"><div class="col-md-6"><label class="form-label">Latitude</label><input name="latitude" type="number" step="any" class="form-control" value="23.2599" required></div><div class="col-md-6"><label class="form-label">Longitude</label><input name="longitude" type="number" step="any" class="form-control" value="77.4126" required></div><div class="col-md-6"><label class="form-label">Last donation date</label><input name="lastDonationDate" type="date" class="form-control"></div><div class="col-md-6 d-flex align-items-end"><div class="form-check form-switch"><input name="available" class="form-check-input" type="checkbox" checked><label class="form-check-label">Available for donation</label></div></div></div></div></div><div class="modal-footer"><button type="button" class="btn btn-soft" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary"><i class="bi bi-person-check-fill"></i> Register donor</button></div></form></div></div></div>
+  <div class="toast-container position-fixed bottom-0 end-0 p-3"><div id="toast" class="toast border-0" role="alert"><div class="toast-body d-flex align-items-center gap-2"><i class="bi bi-check-circle-fill"></i><span id="toastBody"></span></div></div></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
